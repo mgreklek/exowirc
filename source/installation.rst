@@ -1,7 +1,5 @@
 Installation
-************
-
-Introduction 
+************ 
 
 To install the data reduction package, enter the bash command:
 
