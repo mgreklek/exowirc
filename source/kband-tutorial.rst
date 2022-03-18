@@ -1,9 +1,9 @@
 K-Band Tutorial
 ***************
 
-The documentation below describes the steps to analyze images applied with a k-band filter. To analyze science images taken with the j-band filter and the helium filter, please navigate to the :doc:`jband-tutorial` page and the :doc:`helium-tutorial` page respectively.
+The documentation below describes the steps to analyze images taken with a k-band filter. To analyze science images taken with the j-band filter or the helium filter, please navigate to the :doc:`jband-tutorial` page or the :doc:`helium-tutorial` page respectively.
 
-To begin utilizing all functions within the library, create five flags corresponding to the five core endpoints of the library:
+To begin utilizing all functions within the library, create five flags corresponding to the five core functions of the library:
 
 .. code-block:: Python
 
@@ -13,7 +13,7 @@ To begin utilizing all functions within the library, create five flags correspon
   photometric_extraction = True
   fit_for_eclipse = True
 
-In order to run a step, the boolean flag in the python script must be set to True. To turn off any step that you do not wish to run, simply set the boolean flag to False.
+To run a step, the boolean flag in the python script must be set to True. To turn off any step that you do not wish to run, set the boolean flag to False.
 
 .. code-block:: Python
 
@@ -28,6 +28,7 @@ Specify the full paths to the raw image data as well as the output directory. Al
   test_name = 'test_name'
   naming_style = 'image'
 
+Note that the output directory must be manually created before running the code.
 
 Indicate the starting and ending indices of the science images and dark sequences to be analyzed:
 
@@ -36,7 +37,7 @@ Indicate the starting and ending indices of the science images and dark sequence
   science_seqs = [(291, 529)] 
   dark_seqs = [(530, 540)]
 
-If multiple discontinuous series of science sequences or dark sequences are to be used, then simply include the seperate sequences as tuple pairs of the starting and ending index. For example:
+If multiple discontinuous series of science sequences or dark sequences are to be used, then include the seperate sequences as tuple pairs of the starting and ending index. For example:
 
 .. code-block:: Python
 
@@ -55,28 +56,14 @@ Specifically for images with background mode set to global, include the backgrou
 
   bkg_seq = (285, 289)
 
->>>
+Set the lower and upper sigma thresholds for clipping data from the images. A higher upper sigma threshold ensures that the highest outliers are still clipped.
 
 .. code-block:: Python
   bkg_sigma_lower = 5
   bkg_sigma_upper = 1000
   background_mode = 'global'
 
->>>
-
-Optionally indicate the path to the file containing the array of pixel coordinates and their corresponding nonlinearity coefficients if the image pixels have oversaturated brightness:
-
-.. code-block:: Python
-  
-  nonlinearity_fname = 'absolute path to the directory/'
-
-A working file of nonlinearity data used by the Knutson Group is downloadable in the below link:
-
-[insert downloadable file for the nonlinearity correction array]
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-Covariates are quantified invariances used for noise correction. Add the covariates whose metadata you would like to examine in the covariate_names list. For example:
+Covariates are quantities to be used for systematic noise correction. Add the covariates whose data you would like to be included in the final fitting procedure in the covariate_names list. For example:
 
 .. code-block:: Python
 
@@ -93,25 +80,23 @@ A full list of covariates that may be selected include:
   |   'd_from_med’,
   |   ‘water_proxy’
   
-For images taken with the helium filter, ‘water_proxy’ is a commonly tracked covariate for each image file.
-
 Provide the estimated pixel coordinate of the target source in the science image:
 
 .. code-block:: Python
 
   source_coords = [359, 449]
 
-A pixel (or cluster of pixels) may be identified as a star if its point spread function (PSF) has a full-width-half-max above a threshold value. Optionally set an estiamte of this value in the variable finding_fwhm. If finding_fwhm is not set, the value is defaulted to 15.
+A cluster of pixels may be identified as a star if its point spread function (PSF) has a full-width-half-max above a threshold value. Optionally set an estiamte of this value in the variable finding_fwhm. If finding_fwhm is not set, the value is defaulted to 15.
 
 .. code-block:: Python
 
   finding_fwhm = 20.
 
-Optionally, provide a list of aperature radii sizes. If a list for extraction_rads is not provided, the value of the raddi list is defaulted to [20.].
+Provide a list of aperature radii sizes to test for photometric extraction. If a list for extraction_rads is not provided, the value of the raddi list is defaulted to [20.].
 
 .. code-block:: Python
 
-  extraction_rads = range(10, 25)
+  extraction_rads = range(25, 50)
 
 A tuple of the inner and outer pixel radii of the annulus ring that surrounds the target star may  optionally be specified for performing the local background subtraction. If there is no specification of ann_rads, then the default radii values of the tuple is (20, 50).
 
@@ -119,26 +104,21 @@ A tuple of the inner and outer pixel radii of the annulus ring that surrounds th
 
   ann_rads = (25, 50)
 
-A source or target star will have a much higher pixel brightness value compared to the pixel brightness values of other non-source stars. 
-
-Optionally, estimate a sigma threshhold for detecting the source stars. The default source_detection_sigma value is 50. 
+Estimate a sigma threshhold for detecting stars in the images (this is the sigma threshold above the background for identifying the bright pixels that correspond to stars). The default source_detection_sigma value is 50.
 
 .. code-block:: Python
 
   source_detection_sigma = 600.
 
-The source_detection_sigma value may be readjusted after running the photometric analysis. To determine whether to lower or to raise the source_detection_sigma value, navigate to the output dump directory and search for image file source_plot.png generated from the photometry step.
+The source_detection_sigma value may be readjusted after running the photometric analysis. To determine whether to lower or to raise the source_detection_sigma value, navigate to the output dump directory and search for image file source_plot.png generated from the photometry step. If you find that the source star is not circled (not detected) because it is too faint, the threshold should be lowered.
 
-If the source_detection.png circled too many source stars, then lower the sigma value, and if the image circled too little source stars, raise the sigma value. Keep the number of comparison starts circled in the image to be around 10.
-
-Set a maximum number of comparison stars to use in the photometry process. If the max_num_compars is not specified, it is defaulted to 10. However, note that the number is often scarcer than 10 in sparse fields.
+Set a maximum number of comparison stars to use in the photometry process. If the max_num_compars is not specified, it is defaulted to 10. However, note that the usable number is often smaller than 10 in sparse fields.
 
 .. code-block:: Python
 
   max_num_compars = 12
 
->>>
-Define planet params for the transit shape:
+Define parameters for the fitting of the expected eclipse shape. In this case, and typically for K-band observations, we are observing the secondary eclipse of an exoplanet. Therefore we set the phase to 'secondary', and include a prior on the planet to star flux ratio, fpfs_prior. The other fitting parameters are the same ones used for fitting transit profiles.
 
 .. code-block:: Python
 
@@ -153,7 +133,7 @@ Define planet params for the transit shape:
   fpfs_prior = ('uniform', 0., 0.05)
   jitter_prior = ('uniform', 1e-6, 1e-2)
 
-Define fitting params for the pymc3 library:
+Define the parameters for how many steps to run the exoplanet PyMC3 posterior sampler:
 
 .. code-block:: Python
 
@@ -161,7 +141,6 @@ Define fitting params for the pymc3 library:
   draws = 1500
   target_accept = 0.99 
 
->>>
 Now begins the code segment of the sample k-band script:
 
 .. code-block:: Python
@@ -175,9 +154,9 @@ First, initialize the output directories for storing the output of the calibrati
   calib_dir, dump_dir, img_dir = 
     iu.init_output_direcs(output_dir, test_name)
 
-The calib_dir stores the calibrated image data that are later used for photometric analysis. The dump_dir stores the side-effect information about the images that were generated by running the functions, which may later be used in the photometric analysis or fitting later on. The img_dir stores the graph and image outputs that are useful for science.
+The calib_dir stores the calibrated image data that are later used for photometric analysis. The dump_dir stores the diagnostic information about the images that were generated by running the functions, which will later be used in the photometric analysis and fitting, along with the results of the fit. The img_dir stores the scientific analysis plots.
 
-A k-band filter script usually has either the 'median' background mode or the 'global' background mode. If the 'global' background mode is set and the images to the 'global' background files are provided, then run the calibration step for constructing a global background image:
+Construct a background image by using the make_calibrated_bkg_image function with all the following parameters:
 
 .. code-block:: Python
 
@@ -218,8 +197,8 @@ Calibrate the science images if the calibrate_data flag is turned on by passing 
           background_mode = background_mode,
           remake_darks_and_flats = remake_darks_and_flats)
 
-After the science images are all calibrated, with the background noises removed, they are ready for photometric analysis. Perform photometry by calling the perform_photometry() function if the photometric_extraction flag is turned on, and pass in the three basic directories as well as the sciecne sequence images and an array of the estimated coordinates of the stars in the scinece sequence images:
-  
+With the science images all calibrated and the noise removed, they are now ready for photometric analysis. Perform photometry by calling the perform_photometry function if the photometric_extraction flag is turned on, and pass in all the necessary parameters:
+
 .. code-block:: Python
 
   if photometric_extraction:
@@ -240,9 +219,7 @@ After the science images are all calibrated, with the background noises removed,
           max_num_compars = max_num_compars,
           bkg_fname = bkg)
 
-As in the calibration step, some parameters in the photometry steop have default values provided for them, which could be adjusted by users if better suited or more precise values are known. Science series with 'median' background mode do not to provide have a bkg_fname field in perform_photometry().
-
-Finally, fit the images for science by calling the fit_for_eclipse function with all necessary parameters:
+Finally, fit the extracted photometry for the secondary eclipse profile by calling the fit_lightcurve function with all necessary parameters:
 
 .. code-block:: Python
 
