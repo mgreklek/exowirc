@@ -19,9 +19,9 @@ sys.path.insert(0, os.path.abspath('../exowirc'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'exowircDoc'
-copyright = '2021, Caltech Knutson Group'
-author = 'Winnie'
+project = 'ExoWIRC'
+copyright = '2022, Caltech Knutson Group'
+author = 'Winnie and Mike'
 
 # The full version, including alpha/beta/rc tags
 release = 'beta 1.0'
